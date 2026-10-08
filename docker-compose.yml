@@ -1,0 +1,26 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: testescredi
+
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_DB: testescredi
+      POSTGRES_USER: camara
+      POSTGRES_PASSWORD: camara123
+
+    ports:
+      - "5431:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U camara -d camara_votacao"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:

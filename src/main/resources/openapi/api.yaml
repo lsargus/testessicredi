@@ -1,0 +1,132 @@
+openapi: 3.0.3
+info:
+  title: Camara Voting API
+  version: 1.0.0
+security:
+  - bearerAuth: []
+paths:
+  /persons:
+    post:
+      tags: [Person]
+      operationId: createPerson
+      summary: Cadastro publico de usuario (perfil USER)
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreatePersonRequest' }
+      responses:
+        '201':
+          description: Usuario cadastrado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PersonResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /persons/{id}:
+    put:
+      tags: [Person]
+      operationId: updatePerson
+      summary: Atualizacao de dados pessoais do titular ou ADMIN
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UpdatePersonRequest' }
+      responses:
+        '200':
+          description: Dados atualizados
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PersonResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /auth/login:
+    post:
+      tags: [Auth]
+      operationId: login
+      summary: Autenticar com email e senha
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LoginRequest' }
+      responses:
+        '200':
+          description: Autenticado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TokenResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    CreatePersonRequest:
+      type: object
+      required: [name, cpf, email, password]
+      properties:
+        name: { type: string, minLength: 2, maxLength: 120 }
+        cpf: { type: string, pattern: '^\d{11}$', example: '12345678909' }
+        email: { type: string, format: email, maxLength: 255 }
+        password: { type: string, format: password, writeOnly: true, minLength: 8, maxLength: 128 }
+    UpdatePersonRequest:
+      type: object
+      required: [name, cpf, email]
+      properties:
+        name: { type: string, minLength: 2, maxLength: 120 }
+        cpf: { type: string, pattern: '^\d{11}$' }
+        profile: { type: string, enum: [ ADMIN, USER ] }
+        email: { type: string, format: email, maxLength: 255 }
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, format: password, writeOnly: true }
+    PersonResponse:
+      type: object
+      required: [id, name, cpf, email, profile, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        cpf: { type: string }
+        email: { type: string }
+        profile: { type: string, enum: [ADMIN, USER] }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    TokenResponse:
+      type: object
+      required: [accessToken, tokenType, expiresIn]
+      properties:
+        accessToken: { type: string }
+        tokenType: { type: string, example: Bearer }
+        expiresIn: { type: integer, format: int64, example: 3600 }
+    ApiError:
+      type: object
+      properties:
+        timestamp: { type: string, format: date-time }
+        status: { type: integer }
+        code: { type: string }
+        message: { type: string }
+        path: { type: string }
+  responses:
+    BadRequest: { description: Dados invalidos, content: { application/json: { schema: { $ref: '#/components/schemas/ApiError' } } } }
+    Unauthorized: { description: Credenciais invalidas, content: { application/json: { schema: { $ref: '#/components/schemas/ApiError' } } } }
+    Forbidden: { description: Acesso negado, content: { application/json: { schema: { $ref: '#/components/schemas/ApiError' } } } }
+    NotFound: { description: Registro nao encontrado, content: { application/json: { schema: { $ref: '#/components/schemas/ApiError' } } } }
+    Conflict: { description: CPF ou email ja cadastrado, content: { application/json: { schema: { $ref: '#/components/schemas/ApiError' } } } }
