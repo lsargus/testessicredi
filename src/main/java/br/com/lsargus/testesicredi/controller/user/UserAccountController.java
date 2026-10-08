@@ -22,13 +22,14 @@ public class UserAccountController implements PersonApi {
     private final UserAccountApiMapper apiMapper;
 
     @Override
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<PersonResponse> createPerson(CreatePersonRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(apiMapper.toResponse(service.create(apiMapper.fromCreate(request), request.getPassword())));
     }
 
     @Override
-    @PreAuthorize("#id.toString() == authentication.name or hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<PersonResponse> updatePerson(UUID id, UpdatePersonRequest request) {
         return ResponseEntity.ok(apiMapper.toResponse(service.update(id, apiMapper.update(request))));
     }

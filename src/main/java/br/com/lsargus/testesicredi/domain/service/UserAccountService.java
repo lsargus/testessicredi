@@ -37,8 +37,7 @@ public class UserAccountService {
 
     @Transactional
     public UserAccount update(UUID id, UserAccount userAccount) {
-        UserAccount persistedUser = persistenceMapper.toDomain(repository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Usuario nao encontrado")));
+        UserAccount persistedUser = getUserAccount(id);
         String email = normalizeEmail(userAccount.getEmail());
 
         persistedUser.setName(userAccount.getName());
@@ -50,6 +49,11 @@ public class UserAccountService {
         } catch (DataIntegrityViolationException _) {
             throw new ConflictException("CPF ou email ja cadastrado");
         }
+    }
+
+    public UserAccount getUserAccount(UUID id) {
+        return persistenceMapper.toDomain(repository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Usuario nao encontrado")));
     }
 
     public static String normalizeEmail(String email) {

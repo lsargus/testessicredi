@@ -1,7 +1,7 @@
 CREATE TABLE user_account (
     id UUID PRIMARY KEY,
     name VARCHAR(120) NOT NULL,
-    cpf CHAR(11) NOT NULL,
+    cpf VARCHAR(11) NOT NULL,
     email VARCHAR(255) NOT NULL,
     profile VARCHAR(10) NOT NULL DEFAULT 'USER',
     password_hash VARCHAR(255) NOT NULL,

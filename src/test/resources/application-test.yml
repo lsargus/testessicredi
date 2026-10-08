@@ -1,0 +1,14 @@
+spring:
+  main:
+    web-application-type: servlet
+
+  flyway:
+    enabled: true
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+
+logging:
+  level:
+    root: warn

@@ -69,6 +69,136 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/TokenResponse' }
         '401': { $ref: '#/components/responses/Unauthorized' }
+  /agendas:
+    post:
+      summary: Cadastrar uma nova agenda
+      description: Cria uma nova pauta de votação. A agenda é criada com status CREATED e ainda não possui data de abertura.
+      tags: [ Agenda ]
+      operationId: createAgenda
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgendaCreateRequest'
+      responses:
+        '201':
+          description: Agenda criada com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgendaResponse'
+  /agendas/{id}:
+    put:
+      summary: Atualizar agenda
+      description: Permite alterar uma agenda somente enquanto estiver com status CREATED.
+      tags: [ Agenda ]
+      operationId: updateAgenda
+      security: [ { bearerAuth: [] } ]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int32
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgendaUpdateRequest'
+      responses:
+        '200':
+          description: Agenda atualizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgendaResponse'
+        '400':
+          description: Agenda não pode ser alterada neste status
+        '404':
+          description: Agenda não encontrada
+  /agendas/{id}/opening:
+    post:
+      summary: Abrir votação da agenda
+      description: Altera a agenda para aberta e registra a data de início da votação.
+      tags: [ Agenda ]
+      operationId: openingAgenda
+      security: [ { bearerAuth: [] } ]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Votação aberta
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgendaResponse'
+        '400':
+          description: Agenda não pode ser aberta
+  /agendas/{id}/settlement:
+    post:
+      summary: Apurar resultado da votação
+      description:
+        Verifica se o período de votação terminou.
+        Caso tenha terminado, contabiliza os votos,
+        define o resultado e altera o status para COMPLETED.
+      tags: [ Agenda ]
+      operationId: settlement
+      security: [ { bearerAuth: [] } ]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Resultado apurado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgendaResponse'
+        '400':
+          description: Período de votação ainda não encerrado
+        '404':
+          description: Agenda não encontrada
+  /agendas/{id}/votes:
+    post:
+      summary: Registrar voto
+      description:
+        Permite que um usuário vote em uma agenda aberta.
+        Cada usuário pode votar apenas uma vez.
+      tags: [ Votes ]
+      operationId: computeVote
+      security: [ { bearerAuth: [ ] } ]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID da agenda
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VoteRequest'
+      responses:
+        '201':
+          description: Voto registrado
+        '400':
+          description:
+            Votação fechada, expirada ou usuário já votou
+        '404':
+          description: Agenda ou usuário não encontrado
 components:
   securitySchemes:
     bearerAuth:
@@ -109,6 +239,43 @@ components:
         profile: { type: string, enum: [ADMIN, USER] }
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
+    AgendaCreateRequest:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string, maxLength: 120 }
+        description: { type: string, maxLength: 255 }
+        votingDurationSeconds: { type: integer, default: 60, example: 120 }
+    AgendaUpdateRequest:
+      type: object
+      properties:
+        name: { type: string, maxLength: 120 }
+        description: { type: string, maxLength: 255 }
+        votingDurationSeconds: { type: integer }
+        cancel : { type: boolean }
+    AgendaResponse:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        description: { type: string }
+        status: { type: string,  enum: [ CREATED, CANCELLED, OPEN, COMPLETED ] }
+        openingDate: { type: string, format: date-time, nullable: true }
+        votingDurationSeconds: { type: integer }
+        votesAgainst: { type: integer, nullable: true }
+        votesInFavor: { type: integer, nullable: true }
+        result: { type: string, enum: [ APPROVED, REJECTED, INDEFINITE ] }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    VoteRequest:
+      type: object
+      required: [ approved ]
+      properties:
+        approved:
+          type: boolean
+          description:
+            true para voto favorável,
+            false para voto contrário
     TokenResponse:
       type: object
       required: [accessToken, tokenType, expiresIn]

@@ -2,10 +2,12 @@ package br.com.lsargus.testesicredi.common.exception;
 
 import br.com.lsargus.testesicredi.dto.ApiError;
 import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.http.*;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.time.OffsetDateTime;
 import java.util.Arrays;
@@ -14,17 +16,17 @@ import java.util.Arrays;
 public class ApiExceptionHandler {
     @ExceptionHandler(ConflictException.class)
     ResponseEntity<ApiError> conflict(ConflictException e, HttpServletRequest r) {
-        return error(409, "CONFLICT", e.getMessage(), r);
+        return error(HttpStatus.CONFLICT.value(), "CONFLICT", e.getMessage(), r);
     }
 
     @ExceptionHandler(NotFoundException.class)
     ResponseEntity<ApiError> notFound(NotFoundException e, HttpServletRequest r) {
-        return error(404, "NOT_FOUND", e.getMessage(), r);
+        return error(HttpStatus.NOT_FOUND.value(), "NOT_FOUND", e.getMessage(), r);
     }
 
     @ExceptionHandler(BadCredentialsException.class)
     ResponseEntity<ApiError> auth(BadCredentialsException e, HttpServletRequest r) {
-        return error(401, "UNAUTHORIZED", "Credenciais invalidas", r);
+        return error(HttpStatus.UNAUTHORIZED.value(), "UNAUTHORIZED", "Credenciais invalidas", r);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -33,7 +35,15 @@ public class ApiExceptionHandler {
                 .map(String.class::cast).filter(m -> !m.isBlank())
                 .findFirst()
                 .orElse("Payload invalido");
-        return error(400, "VALIDATION_ERROR", msg, r);
+        return error(HttpStatus.BAD_REQUEST.value(), "VALIDATION_ERROR", msg, r);
+    }
+
+    @ExceptionHandler(VoteAlreadyRegisteredException.class)
+    public ResponseEntity<ApiError> handleVoteAlreadyRegistered(
+            VoteAlreadyRegisteredException e,
+            HttpServletRequest r) {
+
+        return error(HttpStatus.CONFLICT.value(), "VALIDATION_ERROR", e.getMessage(), r);
     }
 
     private ResponseEntity<ApiError> error(int status, String code, String msg, HttpServletRequest r) {
