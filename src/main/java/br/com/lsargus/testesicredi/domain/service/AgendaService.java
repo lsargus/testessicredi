@@ -6,6 +6,7 @@ import br.com.lsargus.testesicredi.domain.enuns.AgendaResult;
 import br.com.lsargus.testesicredi.domain.enuns.AgendaStatus;
 import br.com.lsargus.testesicredi.domain.model.Agenda;
 import br.com.lsargus.testesicredi.infrastruct.repository.AgendaRepository;
+import br.com.lsargus.testesicredi.infrastruct.repository.AgendaVoteRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class AgendaService {
 
     private final AgendaRepository repository;
+    private final AgendaVoteRepository agendaVoteRepository;
 
     private final AgendaPersistenceMapper persistenceMapper;
 
@@ -45,6 +47,15 @@ public class AgendaService {
 
     public Agenda settlement(Integer id) {
         Agenda agenda = getAgenda(id);
+
+        if (!agenda.hasVotingFinished()) {
+            throw new IllegalStateException(
+                    "A votação ainda não terminou"
+            );
+        }
+
+        agenda.setVotesInFavor(agendaVoteRepository.countByAgendaIdAndApproved(id, true));
+        agenda.setVotesAgainst(agendaVoteRepository.countByAgendaIdAndApproved(id, false));
 
         agenda.calculateResult();
 

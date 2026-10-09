@@ -2,17 +2,15 @@ package br.com.lsargus.testesicredi.infrastruct.entity;
 
 import br.com.lsargus.testesicredi.domain.enuns.AgendaResult;
 import br.com.lsargus.testesicredi.domain.enuns.AgendaStatus;
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
+import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -21,8 +19,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
+
+import static jakarta.persistence.GenerationType.SEQUENCE;
 
 @Entity
 @Table(name = "agenda")
@@ -33,7 +31,12 @@ import java.util.List;
 @Builder
 public class AgendaEntity {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = SEQUENCE, generator = "AGENDA_SEQ")
+    @SequenceGenerator(
+            name = "AGENDA_SEQ",
+            sequenceName = "agenda_seq",
+            allocationSize = 1
+    )
     private Integer id;
 
     @Column(nullable = false, length = 120)
@@ -67,15 +70,6 @@ public class AgendaEntity {
 
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
-
-
-    @OneToMany(
-            mappedBy = "agenda",
-            cascade = CascadeType.ALL,
-            orphanRemoval = true
-    )
-    @Builder.Default
-    private List<AgendaVoteEntity> votes = new ArrayList<>();
 
     @PrePersist
     void prePersist() {

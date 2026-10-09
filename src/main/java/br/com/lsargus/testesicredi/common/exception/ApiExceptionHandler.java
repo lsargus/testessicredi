@@ -46,6 +46,14 @@ public class ApiExceptionHandler {
         return error(HttpStatus.CONFLICT.value(), "VALIDATION_ERROR", e.getMessage(), r);
     }
 
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ApiError> handleVoteAlreadyRegistered(
+            IllegalStateException e,
+            HttpServletRequest r) {
+
+        return error(HttpStatus.CONFLICT.value(), "ILLEGAL_STATE", e.getMessage(), r);
+    }
+
     private ResponseEntity<ApiError> error(int status, String code, String msg, HttpServletRequest r) {
       var error = new ApiError().timestamp(OffsetDateTime.now()).status(status).code(code).message(msg).path(r.getRequestURI());
         return ResponseEntity.status(status).body(error);

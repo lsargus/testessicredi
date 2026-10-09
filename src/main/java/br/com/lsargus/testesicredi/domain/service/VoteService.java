@@ -34,6 +34,5 @@ public class VoteService {
 
         AgendaVoteEntity voteEntity = persistenceMapper.toEntity(vote);
         repository.saveAndFlush(voteEntity);
-
     }
 }

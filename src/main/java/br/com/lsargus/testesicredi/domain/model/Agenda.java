@@ -6,9 +6,6 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
 
 @Getter
 @Setter
@@ -27,8 +24,6 @@ public class Agenda {
     private Instant createdAt;
     private Instant updatedAt;
 
-    private final List<AgendaVote> votes = new ArrayList<>();
-
     public void update( Agenda agenda, boolean cancel ) {
         if (status != AgendaStatus.CREATED) {
             throw new IllegalStateException(
@@ -43,11 +38,9 @@ public class Agenda {
         this.name = agenda.getName();
         this.description = agenda.getDescription();
 
-        if (votingDurationSeconds != null) {
+        if (agenda.getVotingDurationSeconds() != null) {
             this.votingDurationSeconds = agenda.getVotingDurationSeconds();
         }
-
-        this.updatedAt = Instant.now();
     }
 
 
@@ -61,25 +54,6 @@ public class Agenda {
 
         this.openingDate = Instant.now();
         this.status = AgendaStatus.OPEN;
-        this.updatedAt = Instant.now();
-    }
-
-
-    public void addVote(AgendaVote vote) {
-
-        if (status != AgendaStatus.OPEN) {
-            throw new IllegalStateException(
-                    "A votação não está aberta"
-            );
-        }
-
-        if (hasUserVoted(vote.getUser())) {
-            throw new IllegalStateException(
-                    "Usuário já realizou voto"
-            );
-        }
-
-        votes.add(vote);
     }
 
 
@@ -98,21 +72,6 @@ public class Agenda {
 
     public void calculateResult() {
 
-        if (!hasVotingFinished()) {
-            throw new IllegalStateException(
-                    "A votação ainda não terminou"
-            );
-        }
-
-        votesInFavor = (int) votes.stream()
-                .filter(AgendaVote::isApproved)
-                .count();
-
-        votesAgainst = (int) votes.stream()
-                .filter(v -> !v.isApproved())
-                .count();
-
-
         if (votesInFavor > votesAgainst) {
             result = AgendaResult.APPROVED;
         } else if (votesAgainst > votesInFavor) {
@@ -123,12 +82,6 @@ public class Agenda {
 
         status = AgendaStatus.COMPLETED;
         updatedAt = Instant.now();
-    }
-
-
-    private boolean hasUserVoted(UserAccount user) {
-        return votes.stream()
-                .anyMatch(v -> v.getUser().equals(user));
     }
 
     public void setVotingDurationSeconds(Integer votingDurationSeconds) {

@@ -1,3 +1,8 @@
+CREATE SEQUENCE agenda_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO CYCLE;
+
 CREATE TABLE agenda (
     id INTEGER PRIMARY KEY,
     name VARCHAR(120) NOT NULL,
@@ -14,11 +19,13 @@ CREATE TABLE agenda (
     CONSTRAINT ck_agenda_result CHECK (result IN ('APPROVED', 'REJECTED', 'INDEFINITE'))
 );
 
+
+
 CREATE TABLE agenda_votes (
     id UUID PRIMARY KEY,
     user_id UUID NOT NULL,
     agenda_id INTEGER NOT NULL,
-    approved BIT NOT NULL,
+    approved BOOLEAN NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL,
     CONSTRAINT fk_vote_user FOREIGN KEY (user_id) references user_account(id),
     CONSTRAINT fk_vote_agenda FOREIGN KEY (agenda_id) references agenda(id)

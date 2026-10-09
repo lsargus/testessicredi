@@ -5,13 +5,15 @@ import br.com.lsargus.testesicredi.CucumberSpringConfiguration;
 import br.com.lsargus.testesicredi.dto.AgendaResponse;
 import br.com.lsargus.testesicredi.infrastruct.entity.AgendaEntity;
 import br.com.lsargus.testesicredi.infrastruct.repository.AgendaRepository;
-import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import lombok.RequiredArgsConstructor;
 
+import java.time.Instant;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 @RequiredArgsConstructor
 public class AgendaSteps extends CucumberSpringConfiguration  {
@@ -21,20 +23,6 @@ public class AgendaSteps extends CucumberSpringConfiguration  {
 
     private final SharedContext context;
     private AgendaResponse agendaResponse;
-
-    @Given("estou autenticado")
-    public void estouAutenticado() {
-        var loginResult = apiClient.login(
-                "admin@teste.com",
-                "123456"
-        );
-
-        if (loginResult.getStatus().is2xxSuccessful()) {
-            var token = loginResult.getResponseBody().getAccessToken();
-            context.setToken(token);
-            apiClient.setToken(token);
-        }
-    }
 
     @When("envio uma requisição para criar uma pauta")
     public void envioUmaRequisicaoParaCriarUmaPauta() {
@@ -46,14 +34,7 @@ public class AgendaSteps extends CucumberSpringConfiguration  {
         );
         agendaResponse = response.getResponseBody();
         context.setAgendaId(response.getResponseBody().getId());
-    }
-
-    @Then("o status da resposta deve ser {int}")
-    public void oStatusDaRespostaDeveSer(int status) {
-        assertEquals(
-                status,
-                context.getResponse().getStatus().value()
-        );
+        context.setResponse(response);
     }
 
     @Then("a pauta deve existir no banco")
@@ -71,6 +52,88 @@ public class AgendaSteps extends CucumberSpringConfiguration  {
                 agendaResponse.getName(),
                 agenda.getName()
         );
+    }
+
+    @Then("a openingDate deve ser nula")
+    public void openingDateDeveSerNula() {
+
+        AgendaEntity agenda = agendaRepository
+                .findById(context.getAgendaId())
+                .orElseThrow();
+
+        assertNull(agenda.getOpeningDate());
+    }
+
+    @When("abro a pauta")
+    public void abroAPauta() {
+
+        var response = apiClient.openAgenda(context.getAgendaId());
+
+        agendaResponse = response
+                .getResponseBody();
+        context.setResponse(response);
+    }
+
+    @Then("o status da pauta deve ser {string}")
+    public void oStatusDaPautaDeveSer(String status) {
+
+        assertEquals(
+                status,
+                agendaResponse.getStatus().getValue()
+        );
+    }
+
+    @Then("a openingDate não deve ser nula")
+    public void openingDateNaoDeveSerNula() {
+
+        assertNotNull(
+                agendaResponse.getOpeningDate()
+        );
+    }
+
+    @When("encerro a pauta")
+    public void encerroAPauta() {
+
+        var response = apiClient.closeAgenda(context.getAgendaId());
+
+        agendaResponse = response
+                .getResponseBody();
+        context.setResponse(response);
+    }
+
+    @Then("os votos devem ter sido processados")
+    public void osVotosDevemTerSidoProcessados() {
+
+        AgendaEntity agenda = agendaRepository
+                .findById(context.getAgendaId())
+                .orElseThrow();
+
+        assertEquals(2, agenda.getVotesInFavor());
+        assertEquals(1, agenda.getVotesAgainst());
+    }
+
+    @Then("o resultado deve ser {string}")
+    public void oResultadoDeveSer(String result) {
+
+        AgendaEntity agenda = agendaRepository
+                .findById(context.getAgendaId())
+                .orElseThrow();
+
+        assertEquals(
+                result,
+                agenda.getResult().toString()
+        );
+    }
+
+    @When("o período da pauta é encerrado")
+    public void oPeriodoDaPautaEEncerrado() {
+        AgendaEntity agenda = agendaRepository.findById(context.getAgendaId())
+                .orElseThrow();
+        agenda.setOpeningDate(
+                Instant.now().minusSeconds(120)
+        );
+
+        agendaRepository.save(agenda);
     }
 
 }

@@ -6,10 +6,8 @@ import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.test.web.servlet.client.EntityExchangeResult;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -33,17 +31,10 @@ public class AuthenticationSteps extends CucumberSpringConfiguration {
         context.setResponse(response);
 
         if (response.getStatus().is2xxSuccessful()) {
-            context.setToken(response.getResponseBody().getAccessToken());
+            var token = response.getResponseBody().getAccessToken();
+            context.setToken(token);
+            apiClient.setToken(token);
         }
-    }
-
-    @Then("o status da resposta deve ser {int}")
-    public void validarStatus(Integer status) {
-
-        assertEquals(
-                HttpStatus.valueOf(status),
-                context.getResponse().getStatus()
-        );
     }
 
     @Then("deve retornar um token JWT")

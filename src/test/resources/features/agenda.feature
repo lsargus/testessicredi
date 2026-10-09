@@ -1,7 +1,7 @@
 Feature: Agenda
 
   Background:
-    Given estou autenticado
+    Given estou autenticado como administrador
 
   Scenario: Criar uma pauta
 
